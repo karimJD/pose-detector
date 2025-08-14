@@ -160,6 +160,9 @@ const PostureDetector: FC = () => {
    * @param {MediaPipeResults} results - The results object from MediaPipe Pose, now with a defined type.
    */
   const onResults = (results: MediaPipeResults): void => {
+    // Log the raw results object from MediaPipe.
+    console.log('Raw MediaPipe results:', results);
+
     const canvasElement = canvasRef.current;
     const videoElement = videoRef.current;
     if (!canvasElement || !videoElement) return;
@@ -182,11 +185,18 @@ const PostureDetector: FC = () => {
         y: landmark.y * canvasElement.height,
       }));
 
+      // Log the pixel-based landmarks.
+      console.log('Pixel Landmarks:', pixelLandmarks);
+
       const spinePoints = generateSpinePoints(pixelLandmarks);
       const spineAnalysis = analyzeSpineAlignment(
         spinePoints,
         canvasElement.width
       );
+
+      // Log the calculated spine points and the posture analysis results.
+      console.log('Calculated Spine Points:', spinePoints);
+      console.log('Spine Analysis Results:', spineAnalysis);
 
       drawAlignmentGuide(canvasCtx, canvasElement.width, canvasElement.height);
       drawStickFigure(canvasCtx, pixelLandmarks);
@@ -366,6 +376,10 @@ const PostureDetector: FC = () => {
     feedbackMessages.push(
       `Average deviation: ${spineAnalysis.avgDeviation}px, Maximum: ${spineAnalysis.maxDeviation}px`
     );
+
+    // Log the messages before they are joined into a single string.
+    console.log('Feedback Messages:', feedbackMessages);
+
     setFeedback(feedbackMessages.join(' '));
   };
 
@@ -540,7 +554,6 @@ const PostureDetector: FC = () => {
             className='w-full h-auto'
             autoPlay
             playsInline
-            style={{ display: 'none' }}
           />
           <canvas ref={canvasRef} className='w-full h-auto' />
 
