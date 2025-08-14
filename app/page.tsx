@@ -42,12 +42,45 @@ interface SpineAnalysis {
   severity: 'excellent' | 'good' | 'moderate' | 'severe';
 }
 
+interface PoseInstance {
+  setOptions(options: PoseOptions): void;
+  onResults(callback: (results: MediaPipeResults) => void): void;
+  send(options: { image: HTMLVideoElement }): Promise<void>;
+}
+
+interface PoseOptions {
+  modelComplexity: number;
+  smoothLandmarks: boolean;
+  enableSegmentation: boolean;
+  smoothSegmentationMask: boolean;
+  minDetectionConfidence: number;
+  minTrackingConfidence: number;
+}
+
+interface CameraConfig {
+  onFrame: () => Promise<void>;
+  width?: number;
+  height?: number;
+}
+
+interface CameraInstance {
+  start(): void;
+}
+
 // This 'declare global' block is the fix for the TypeScript error.
 // It informs the compiler about the global objects loaded from the MediaPipe scripts.
 declare global {
   interface Window {
-    Pose: any; // A simple `any` type is sufficient for this purpose.
-    Camera: any; // Same for the Camera object.
+    Pose: {
+      new (config: { locateFile: (file: string) => string }): PoseInstance;
+      POSE_CONNECTIONS: Array<[number, number]>;
+    };
+    Camera: {
+      new (
+        videoElement: HTMLVideoElement,
+        config: CameraConfig
+      ): CameraInstance;
+    };
   }
 }
 
@@ -135,16 +168,18 @@ const PostureDetector: FC = () => {
 
         pose.onResults(onResults);
 
-        const camera = new window.Camera(videoRef.current, {
-          onFrame: async () => {
-            if (videoRef.current) {
-              await pose.send({ image: videoRef.current });
-            }
-          },
-          width: 640,
-          height: 480,
-        });
-        camera.start();
+        if (videoRef && videoRef.current) {
+          const camera = new window.Camera(videoRef.current, {
+            onFrame: async () => {
+              if (videoRef.current) {
+                await pose.send({ image: videoRef.current });
+              }
+            },
+            width: 640,
+            height: 480,
+          });
+          camera.start();
+        }
       } catch (error) {
         console.error('Error initializing MediaPipe or camera:', error);
         setFeedback('Error: Unable to load camera or detection models.');
